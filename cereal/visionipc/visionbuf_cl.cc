@@ -81,7 +81,7 @@ int VisionBuf::free() {
   int err = 0;
   if (this->buf_cl){
     err = clReleaseMemObject(this->buf_cl);
-    if (err != 0) return err;
+    if (err != 0) return err; 
 
     err = clReleaseCommandQueue(this->copy_q);
     if (err != 0) return err;

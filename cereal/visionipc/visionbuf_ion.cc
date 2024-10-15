@@ -26,6 +26,7 @@
 // clGetDeviceInfo(device_id, CL_DEVICE_EXT_MEM_PADDING_IN_BYTES_QCOM,
 //                 sizeof(padding_cl), &padding_cl,
 //                 NULL);
+
 #define DEVICE_PAGE_SIZE_CL 4096
 #define PADDING_CL 0
 
