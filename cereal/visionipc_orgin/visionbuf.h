@@ -43,19 +43,16 @@ class VisionBuf {
   size_t idx = 0;
   VisionStreamType type;
 
-  // // OpenCL
-  // cl_mem buf_cl = nullptr;
-  // cl_command_queue copy_q = nullptr;
+  // OpenCL
+  cl_mem buf_cl = nullptr;
+  cl_command_queue copy_q = nullptr;
 
-//BPU
-  hbSysMem bpu_mem=nullptr;
-  
   // ion
   int handle = 0;
 
   void allocate(size_t len);
   void import();
-  // void init_cl(cl_device_id device_id, cl_context ctx);
+  void init_cl(cl_device_id device_id, cl_context ctx);
   void init_rgb(size_t width, size_t height, size_t stride);
   void init_yuv(size_t width, size_t height);
   int sync(int dir);

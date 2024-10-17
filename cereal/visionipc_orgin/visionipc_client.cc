@@ -8,16 +8,7 @@
 #include "visionipc/visionipc_server.h"
 #include "logger/logger.h"
 
-// VisionIpcClient::VisionIpcClient(std::string name, VisionStreamType type, bool conflate, cl_device_id device_id, cl_context ctx) : name(name), type(type), device_id(device_id), ctx(ctx) {
-//   msg_ctx = Context::create();
-//   sock = SubSocket::create(msg_ctx, get_endpoint_name(name, type), "127.0.0.1", conflate, false);
-
-//   poller = Poller::create();
-//   poller->registerSocket(sock);
-// }
-
-
-VisionIpcClient::VisionIpcClient(std::string name, VisionStreamType type, bool conflate) : name(name), type(type){
+VisionIpcClient::VisionIpcClient(std::string name, VisionStreamType type, bool conflate, cl_device_id device_id, cl_context ctx) : name(name), type(type), device_id(device_id), ctx(ctx) {
   msg_ctx = Context::create();
   sock = SubSocket::create(msg_ctx, get_endpoint_name(name, type), "127.0.0.1", conflate, false);
 
@@ -77,8 +68,8 @@ bool VisionIpcClient::connect(bool blocking){
     } else {
       buffers[i].init_yuv(buffers[i].width, buffers[i].height);
     }
-//删除opencl
-    // if (device_id) buffers[i].init_cl(device_id, ctx);
+
+    if (device_id) buffers[i].init_cl(device_id, ctx);
   }
 
   connected = true;

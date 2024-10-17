@@ -56,12 +56,11 @@ void VisionBuf::import(){
    this->addr = mmap(NULL,this->mmap_len,PROT_READ | PROT_WRITE,MAP_SHARED,this->fd,0);
    assert(this->addr != MAP_FAILED);
 
-  //  hbSysMem bpu_mem;
-  assert(this->bpu_mem !)
-   this->bpu_mem.phyAddr = (uintptr_t)this->addr;
-   this->bpu_mem.virAddr = this->addr; 
+   hbSysMem bpu_mem;
+   bpu_mem.phyAddr = (uintptr_t)this->addr;
+   bpu_mem.virAddr = this->addr; 
    
-   int ret = hbSysRegisterMem(&this->bpu_mem);
+   int ret = hbSysRegisterMem(&bpu_mem);
    assert(ret==0);
    this->bpu_mem=bpu_mem;
 

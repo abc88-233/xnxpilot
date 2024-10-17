@@ -21,15 +21,7 @@ std::string get_endpoint_name(std::string name, VisionStreamType type){
   }
 }
 
-// VisionIpcServer::VisionIpcServer(std::string name, cl_device_id device_id, cl_context ctx) : name(name), device_id(device_id), ctx(ctx) {
-//   msg_ctx = Context::create();
-
-//   std::random_device rd("/dev/urandom");
-//   std::uniform_int_distribution<uint64_t> distribution(0,std::numeric_limits<uint64_t>::max());
-//   server_id = distribution(rd);
-// }
-
-VisionIpcServer::VisionIpcServer(std::string name) : name(name) {
+VisionIpcServer::VisionIpcServer(std::string name, cl_device_id device_id, cl_context ctx) : name(name), device_id(device_id), ctx(ctx) {
   msg_ctx = Context::create();
 
   std::random_device rd("/dev/urandom");
@@ -128,9 +120,9 @@ void VisionIpcServer::listener(){
       bufs[i] = *buffers[type][i];
 
       // Remove some private openCL/ion metadata
-      // bufs[i].buf_cl = 0;
-      // bufs[i].copy_q = 0;
-      // bufs[i].handle = 0;
+      bufs[i].buf_cl = 0;
+      bufs[i].copy_q = 0;
+      bufs[i].handle = 0;
 
       bufs[i].server_id = server_id;
     }
