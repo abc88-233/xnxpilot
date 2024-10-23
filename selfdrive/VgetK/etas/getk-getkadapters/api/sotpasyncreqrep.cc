@@ -126,6 +126,7 @@ ErrorCodeT subscribe(const types::MappedServiceListT& mpdSrvList) override
            //返回给Ralo状态更新信息
         ISoTpAsyncResponse* responseHandler;
         responseHandler->updateServiceState();
+         return EC_OK;
     }    
 
 }
@@ -146,11 +147,12 @@ ErrorCodeT unsubscribe(const types::MappedServiceListT& mpdSrvList) override
      }
        ISoTpAsyncResponse* responseHandler;
        responseHandler->updateServiceState();
+       return EC_OK;
 }
 
 ErrorCodeT unsubscribeAll() override
 {
-   for(const auto& Sockets :registeredSockets )
+   for(const auto& Sockets :registeredSockets)
    {
     auto sock = Sockets.second;
     poller->unregisterSocket(sock);
@@ -158,5 +160,6 @@ ErrorCodeT unsubscribeAll() override
    }
      ISoTpAsyncResponse* responseHandler;
      responseHandler->updateServiceState();
+      return EC_OK;
    
 }
