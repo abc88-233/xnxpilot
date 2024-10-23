@@ -60,7 +60,7 @@ private:
 
 public:
   void registerSocket(SubSocket *socket);
-  bool unregisterSocket(SubSocket* socket)
+  void unregisterSocket(SubSocket* socket)
   std::vector<SubSocket*> poll(int timeout);
   ~MSGQPoller(){};
 };

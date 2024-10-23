@@ -58,6 +58,7 @@ public:
 class Poller {
 public:
   virtual void registerSocket(SubSocket *socket) = 0;
+  virtual void unregisterSocket(SubSocket *socket) = 0;
   virtual std::vector<SubSocket*> poll(int timeout) = 0;
   static Poller * create();
   static Poller * create(std::vector<SubSocket*> sockets);

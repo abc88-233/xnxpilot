@@ -216,8 +216,22 @@ void MSGQPoller::registerSocket(SubSocket * socket){
   num_polls++;
 }
 
+void MSGQPoller::unregisterSocket(SubSocket* socket) {
+    // 查找要移除的套接字
+    auto it = std::find(sockets.begin(), sockets.end(), socket);
+    if (it != sockets.end()) {
+        // 找到套接字，移除它
+        size_t index = it - sockets.begin();
+        // 将最后一个元素移动到要移除的位置
+        polls[index] = polls[num_polls - 1];
+        // 更新套接字列表
+        sockets.erase(it);
+        // 减少轮询器计数
+        num_polls--;
+      
+    }
 
-
+}
 std::vector<SubSocket*> MSGQPoller::poll(int timeout){
   std::vector<SubSocket*> r;
 
