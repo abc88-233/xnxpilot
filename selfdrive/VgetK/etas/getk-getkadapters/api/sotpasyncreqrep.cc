@@ -84,7 +84,12 @@ class Impl1:public etas::getk::api::ISoTpAsyncRequest{
 ErrorCodeT subscribe(const types::MappedServiceListT& mpdSrvList) override
 {
     //服务订阅设置回调流程
-    
+
+
+    //返回给Ralo状态更新信息
+    ISoTpAsyncResponse* responseHandler;
+    responseHandler->updateServiceState();
+
 }
 
 ErrorCodeT unsubscribe(const types::MappedServiceListT& mpdSrvList) override
