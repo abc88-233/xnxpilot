@@ -4,6 +4,23 @@ using namespace etas::getk;
 class Impl1:public etas::getk::api::ISoTpAsyncRequest{
     ErrorCodeT find(const types::ServiceStrListT& srvStrList)
     {
+        types::ServiceDescListT& offer_list;
+        types::ServiceDescListT& stop_list;
+        for(const auto& srvStr: srvStrList){
+            if(services.find(srvStr)!=services.end())
+            {
+                return EC_ERR_INVALID_PARAMETER;
+            }
+            SubMaster sm({srvStr.c_str()});
+            auto mes = services[ss];
+            if(sm.allAlive)
+            {
+                offer_list.push_back(types::ServiceDescT(mes.port,ss));
+            }
+            else{
+                stop_list.push_back(types::ServiceDescT(mes.port,ss));
+            }
+        }
        
         ISoTpAsyncResponse* responseHandler;
          if (!responseHandler) {
@@ -29,10 +46,10 @@ class Impl1:public etas::getk::api::ISoTpAsyncRequest{
           SubMaster sm({(it.first).c_str()});
           if(sm.allAlive)
           {
-            offer_list.push_back(types::ServiceDescT(it.second.port,it.first))
+            offer_list.push_back(types::ServiceDescT(it.second.port,it.first));
           }
           else{
-            stop_list.push_back(types::ServiceDescT(it.second.port,it.first))
+            stop_list.push_back(types::ServiceDescT(it.second.port,it.first));
           }
         }
 
@@ -51,3 +68,4 @@ class Impl1:public etas::getk::api::ISoTpAsyncRequest{
         return EC_OK;
     }
 }
+
