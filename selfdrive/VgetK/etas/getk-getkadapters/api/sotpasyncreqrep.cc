@@ -88,11 +88,37 @@ class Impl1:public etas::getk::api::ISoTpAsyncRequest{
 
 ErrorCodeT subscribe(const types::MappedServiceListT& mpdSrvList) override
 {
-    //服务订阅设置回调流程
+    //user should parse the parameter mappedServices and do subscription
+    // 1.get the shortId from MappedServiceListT.serviceInt and find the service object
+    //寻找shortID
+    // 2.get the contextId from MappedServiceListT.contextId
+    service_list = {};
     for(const auto& mpdSrv:mpdSrvList)
-    {
+    {   //获取serviceint
         ServiceIntT serint = mpdSrv.serviceInt;
+        //获取contextid
+        ContextIdT con_id = mpdSrv.contextId;
+        //寻找服务名称
+        auto server_name = etas_services[int(serint)];
+        //服务列表
+        service_list.
     }
+    //服务订阅
+    SubMaster sm({(server_name).c_str()});
+    // 3.do subscription on the service object and with a callback which eventually call IDataSender->sendDataBuffer
+
+    //a EXAMPLE CALL BACK MIGHT be
+    auto callback = [this](std::shared_ptr<SerializedMessage>message )
+    {
+        etas::Getk::api::DataInfoT data_info(etas::Getk::types::ContentTypeT::Data,contextId,serviceInfo.shortid,{msg->publishTime},reinterpret_cast<>msg->data),0)
+        etas::getk::api::BufferInfoT buffer_header({writer->data(),0},writer->size(),etas::Getk::api::SendDataBufferFlags::sync);
+        etas::getk::api::BufferInfoT buffer_data({msg->data(),0},msg->dataSize(),etas::Getk::api::SendDataBufferFlags::none);
+        data_info.buffers.push_back(buffer_header);
+        data_info.buffers.push_back(buffer_data);
+        IDataSender->SendDataBuffer();
+    }
+    //服务订阅设置回调流程
+
 
     //返回给Ralo状态更新信息
     ISoTpAsyncResponse* responseHandler;
