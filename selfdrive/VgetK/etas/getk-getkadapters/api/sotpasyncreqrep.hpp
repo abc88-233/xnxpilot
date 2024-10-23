@@ -89,6 +89,7 @@ class ISoTpAsyncResponse
 {
 public:
     Poller * poller = Poller::create();
+    std::map<std::string,SubSocket*> registeredSockets;
     
     virtual ~ISoTpAsyncResponse() {}
 

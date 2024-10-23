@@ -103,51 +103,60 @@ ErrorCodeT subscribe(const types::MappedServiceListT& mpdSrvList) override
       //服务订阅
         SubSocket* sock = SubSocket::create(ctx, server_name.c_str());
         poller->registerSocket(sock);
+        registeredSockets[server_name]=sock;
     }
       // 3.do subscription on the service object and with a callback which eventually call IDataSender->sendDataBuffer
     while(true)
     {
+            //服务订阅设置回调流程
         IDataSender* data_sender;
         for (auto sock : poller->poll(1000))
         {
+            auto msg = sock->receive();
            api::DataInfoT data_info();
+           
             //  BufferInfoT(const BufferAddressT &_address, uint32_t _size, SendDataBufferFlags _flags) : flags(_flags), address(_address), size(_size)
-           api::BufferInfoT buffer_header(api::SendDataBufferFlags::sync);
-           api::BufferInfoT buffer_data(sock->receive()->,api::SendDataBufferFlags::none);
-           data_info.buffers.push_back(buffer_header);
+        //    api::BufferInfoT buffer_header(api::SendDataBufferFlags::sync);
+           api::BufferInfoT buffer_data(msg->getData(),msg->getSize(),api::SendDataBufferFlags::none);
+        //    可以不填充
+        //    data_info.buffers.push_back(buffer_header);
            data_info.buffers.push_back(buffer_data);
            data_sender->sendDataBuffer(data_info);
         }
            //返回给Ralo状态更新信息
         ISoTpAsyncResponse* responseHandler;
         responseHandler->updateServiceState();
-    }
-
-  
-
-    auto callback = [this](std::shared_ptr<SerializedMessage>message )
-    {
-        etas::Getk::api::DataInfoT data_info(etas::Getk::types::ContentTypeT::Data,contextId,serviceInfo.shortid,{msg->publishTime},reinterpret_cast<>msg->data),0)
-        etas::getk::api::BufferInfoT buffer_header({writer->data(),0},writer->size(),etas::Getk::api::SendDataBufferFlags::sync);
-        etas::getk::api::BufferInfoT buffer_data({msg->data(),0},msg->dataSize(),etas::Getk::api::SendDataBufferFlags::none);
-        data_info.buffers.push_back(buffer_header);
-        data_info.buffers.push_back(buffer_data);
-        IDataSender->SendDataBuffer();
-    }
-    //服务订阅设置回调流程
-
-
- 
-    
+    }    
 
 }
 
 ErrorCodeT unsubscribe(const types::MappedServiceListT& mpdSrvList) override
 {
-
+     for(const auto& mpdSrv:mpdSrvList)
+     {
+        // 查找服务名称
+        ServiceIntT serint = mpdSrv.serviceInt;
+        auto server_name = etas_services[int(serint)];
+        SubSocket* sock_to_remove = registeredSockets[server_name];
+        if (sock_to_remove) {
+            poller->unregisterSocket(sock_to_remove);
+            // 删除套接字
+            delete sock_to_remove;  
+        }
+     }
+       ISoTpAsyncResponse* responseHandler;
+       responseHandler->updateServiceState();
 }
 
 ErrorCodeT unsubscribeAll() override
 {
-
+   for(const auto& Sockets :registeredSockets )
+   {
+    auto sock = Sockets.second;
+    poller->unregisterSocket(sock);
+    delete sock;
+   }
+     ISoTpAsyncResponse* responseHandler;
+     responseHandler->updateServiceState();
+   
 }
