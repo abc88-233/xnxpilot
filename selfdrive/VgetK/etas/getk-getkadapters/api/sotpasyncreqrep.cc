@@ -48,9 +48,11 @@ class Impl1:public etas::getk::api::ISoTpAsyncRequest{
 
     ErrorCodeT findAll() override
     {
-        //寻找所有活跃的通道
+        
+        //设置两个ServiceDescListT类型列表，用于向VgetK系统传递活跃与不活跃的通道消息
         types::ServiceDescListT& offer_list;
         types::ServiceDescListT& stop_list;
+        //遍历所有通道，寻找所有通道的活跃状态
         for (const auto& it : services) {
           SubMaster sm({(it.first).c_str()});
           if(sm.allAlive)
@@ -65,7 +67,8 @@ class Impl1:public etas::getk::api::ISoTpAsyncRequest{
         //返回给Ralo状态信息
         ISoTpAsyncResponse* responseHandler;
          if (!responseHandler) {
-            return EC_ERR_INVALID_HANDLE; // 返回错误代码，因为响应处理器未设置
+            // 返回错误代码，因为响应处理器未设置
+            return EC_ERR_INVALID_HANDLE; 
         }
         if(!offer_list.empty())
         {
@@ -81,6 +84,7 @@ class Impl1:public etas::getk::api::ISoTpAsyncRequest{
 ErrorCodeT subscribe(const types::MappedServiceListT& mpdSrvList) override
 {
     //服务订阅设置回调流程
+    
 }
 
 ErrorCodeT unsubscribe(const types::MappedServiceListT& mpdSrvList) override
