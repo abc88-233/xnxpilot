@@ -14,6 +14,7 @@
 /* *** Local include files *** */
 #include "etas/upinterface-stubs/sotpasynctypes.hpp"
 #include "etas/base/err.h"
+#include "cereal/services.h"
 
 namespace etas {
 namespace getk {
@@ -26,6 +27,31 @@ namespace api {
 class ISoTpAsyncRequest
 {
 public:
+    std::map<types::ServiceStrT, SubMaster*> serviceMap;
+
+
+    void initializeServices(const std::vector<types::ServiceStrT>& serviceList, const char* serviceAddress, const std::vector<types::ServiceStrT>& ignoreAliveList) {
+    for (const auto& serviceName : serviceList) {
+        auto serv_it = services.find(serviceName);
+        if (serv_it != services.end()) {
+            // 创建 SubMaster 实例并添加到映射中
+            SubMaster* sub = new SubMaster({serv_it->first.c_str()}, serv_it->second., ignoreAliveList);
+            serviceMap[serviceName] = subMaster;
+        }
+        }
+        }
+
+//         s.ctx = Context::create();
+//      for (const auto& it : services) {
+//     if (!it.should_log) continue;
+
+//     SubSocket * sock = SubSocket::create(s.ctx, it.name);
+//     assert(sock != NULL);
+//   }
+//     struct CerealState {
+//      Context *ctx;
+// };
+//     CerealState s;
     virtual ~ISoTpAsyncRequest() {}
 
     /**
