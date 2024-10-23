@@ -1,5 +1,10 @@
 #include"sotpasyncreqrep.hpp"
-#include
+#include"cereal/messaging/messaging.h"
+#include"cereal/service.h"
+#include"cereal/etas_service.h"
+#include<iostream>
+
+
 using namespace etas::getk;
 class Impl1:public etas::getk::api::ISoTpAsyncRequest{
     ErrorCodeT find(const types::ServiceStrListT& srvStrList) override
@@ -84,7 +89,10 @@ class Impl1:public etas::getk::api::ISoTpAsyncRequest{
 ErrorCodeT subscribe(const types::MappedServiceListT& mpdSrvList) override
 {
     //服务订阅设置回调流程
-
+    for(const auto& mpdSrv:mpdSrvList)
+    {
+        ServiceIntT serint = mpdSrv.serviceInt;
+    }
 
     //返回给Ralo状态更新信息
     ISoTpAsyncResponse* responseHandler;
