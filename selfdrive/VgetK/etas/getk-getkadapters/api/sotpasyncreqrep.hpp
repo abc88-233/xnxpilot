@@ -88,6 +88,8 @@ public:
 class ISoTpAsyncResponse
 {
 public:
+    Poller * poller = Poller::create();
+    
     virtual ~ISoTpAsyncResponse() {}
 
     /**
