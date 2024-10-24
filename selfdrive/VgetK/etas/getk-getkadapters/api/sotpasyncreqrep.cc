@@ -163,7 +163,7 @@ ErrorCodeT unsubscribe(const types::MappedServiceListT& mpdSrvList) override
 
 ErrorCodeT unsubscribeAll() override
 {
-    types::ServiceDescExtListT& srvDescExtList;
+   types::ServiceDescExtListT& srvDescExtList;
 
    for(const auto& Sockets :registeredSockets)
    {
@@ -187,25 +187,27 @@ ErrorCodeT unsubscribeAll() override
 
 ErrorCodeT requestContent(const types::ContextIdT contextId, const types::ServiceIntListT& srvIntList, const types::ContentTypeT type) override
 {
-    auto localwriter = [this](etas::getk::types::ContextIdT contextId , etas::getk::types::ServiceIntT shortId,const void* const data, uint32_t datasize,etas::getk::types::ContentTypeT type)
+    ISoTpAsyncResponse* responseHandler;
+    IDataSender* data_sender;
+    auto localwriter = [this](types::ContextIdT contextId , types::ServiceIntT shortId,const void* const data, uint32_t datasize,types::ContentTypeT type)
     {
-        etas::getk::api::BufferAddressT addr{data,0};
-        etas::getk::api::BufferInfoT buffer_info{addr,dataSize, etas::getk::api::SendDataBufferFlags::sync};
+        api::BufferAddressT addr{data,0};
+        api::BufferInfoT buffer_info{addr,dataSize, etas::getk::api::SendDataBufferFlags::sync};
         const auto rx_timestamp std::chrono::steady_clock::now();
         uint64_t timestamp_ns = static_cast<std::uint64_t>( std::chrono::duration_cast<std::chrono::nanoseconds>(rx_timestamp.time_since_epoch()).count());
-        etas::getk::types::DataInfoT datainfo(type,contextId,shortId,{timestamp_ns},0,0);
+        types::DataInfoT datainfo(type,contextId,shortId,{timestamp_ns},0,0);
         datainfo.buffers.push_back(buffer_info);
-        IDataSender->sendDataBuffer(datainfo);
+        data_sender->sendDataBuffer(datainfo);
     };
     switch(type)
     {
-        case etas::getk::types::ContentTypeT::GLOBAL_HEADER:
+        case types::ContentTypeT::GLOBAL_HEADER:
         {
-             etas::getk::types::ServiceIntT shortId =0xffffffff;
+             types::ServiceIntT shortId =0xffffffff;
              auto header = xxx;
              localWrite(contextId,shortId,writer->data(),writer->size(),etas::getk::types::ContentTypeT::GLOBAL_HEADER);
         }
-        case etas::getk::types::ContentTypeT::GLOBAL_STATIC_INFO:
+        case types::ContentTypeT::GLOBAL_STATIC_INFO:
         {
             for(const auto& serviceInfo : this->serviceTopicManager_.getServiceInfoList(stvIntList))
             {
@@ -213,36 +215,36 @@ ErrorCodeT requestContent(const types::ContextIdT contextId, const types::Servic
                 localWrite(contextId,serviceInfo.shortId,schema->data(),schema->size(),etas::getk::types::ContentTypeT::METADATA);
             }
         }
-        case etas::getk::types::ContentTypeT::GLOBAL_DYNAMIC_INFO:
+        case types::ContentTypeT::GLOBAL_DYNAMIC_INFO:
         {
             //send global dynamic data
-            ISoTpAsyncResponse->requestContentCompleted(contextId);
+            responseHandler->requestContentCompleted(contextId);
             break;
         }
-        case etas::getk::types::ContentTypeT::METADATA:
+        case types::ContentTypeT::METADATA:
         {
             for(const auto& serviceInfo : this->serviceTopicManager_.getServiceInfoList(stvIntList))
             {
                 auto channel = xxx;
                 localWrite(contextId,serviceInfo.shortId,channel->data(),channel->size(),etas::getk::types::ContentTypeT::METADATA);
             }
-            ISoTpAsyncResponse->requestContentCompleted(contextId);
+            responseHandler->requestContentCompleted(contextId);
             break;
         }
-        case etas::getk::types::ContentTypeT::DATA:
+        case types::ContentTypeT::DATA:
         {
              for(const auto& serviceInfo : this->serviceTopicManager_.getServiceInfoList(stvIntList))
             {
                 auto buffer_info = xxx;
-                etas::getk::types::DataInfoT datainfo(type,contextId,shortId,{timestamp_ns},0,0);
+                types::DataInfoT datainfo(type,contextId,shortId,{timestamp_ns},0,0);
                 datainfo.buffers.push_back(buffer_info);
-                IDataSender->sendDataBuffer(datainfo);
+                data_sender->sendDataBuffer(datainfo);
             }
-            ISoTpAsyncResponse->requestContentCompleted(contextId);
+            responseHandler->requestContentCompleted(contextId);
             break;
         }
         default:
-         ISoTpAsyncResponse->requestContentCompleted(contextId);
+            responseHandler->requestContentCompleted(contextId);
             break;
     }
     return EC_OK;
