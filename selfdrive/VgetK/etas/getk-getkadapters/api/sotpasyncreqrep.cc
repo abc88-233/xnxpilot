@@ -84,7 +84,7 @@ class Impl1:public etas::getk::api::ISoTpAsyncRequest{
         }
         return EC_OK;
     }
-}
+
 
 ErrorCodeT subscribe(const types::MappedServiceListT& mpdSrvList) override
 {
@@ -231,8 +231,20 @@ ErrorCodeT requestContent(const types::ContextIdT contextId, const types::Servic
         }
         case etas::getk::types::ContentTypeT::DATA:
         {
-            
+             for(const auto& serviceInfo : this->serviceTopicManager_.getServiceInfoList(stvIntList))
+            {
+                auto buffer_info = xxx;
+                etas::getk::types::DataInfoT datainfo(type,contextId,shortId,{timestamp_ns},0,0);
+                datainfo.buffers.push_back(buffer_info);
+                IDataSender->sendDataBuffer(datainfo);
+            }
+            ISoTpAsyncResponse->requestContentCompleted(contextId);
+            break;
         }
+        default:
+         ISoTpAsyncResponse->requestContentCompleted(contextId);
+            break;
     }
+    return EC_OK;
 }
- 
+ }
