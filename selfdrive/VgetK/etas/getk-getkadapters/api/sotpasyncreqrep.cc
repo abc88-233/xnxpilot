@@ -195,19 +195,10 @@ ErrorCodeT requestContent(const types::ContextIdT contextId, const types::Servic
 {
     ISoTpAsyncResponse* responseHandler;
     IDataSender* data_sender;
-    while(true)
-    {
-       for(auto cur_sock : poller->poll(1000))
-       {
-         auto msg = cur_sock->receive();
-         auto msg_data = msg->getData();
-         auto msg_size = msg->getSize();
-       }
-    }
     auto localwriter = [this](types::ContextIdT contextId , types::ServiceIntT shortId,const void* const data, uint32_t datasize,types::ContentTypeT type)
     {
         api::BufferAddressT addr{data,0};
-        api::BufferInfoT buffer_info{addr,dataSize, etas::getk::api::SendDataBufferFlags::sync};
+        api::BufferInfoT buffer_info{addr,dataSize, api::SendDataBufferFlags::sync};
         const auto rx_timestamp = std::chrono::steady_clock::now();
         uint64_t timestamp_ns = static_cast<std::uint64_t>( std::chrono::duration_cast<std::chrono::nanoseconds>(rx_timestamp.time_since_epoch()).count());
         types::DataInfoT datainfo(type,contextId,shortId,{timestamp_ns},0,0);
@@ -219,16 +210,22 @@ ErrorCodeT requestContent(const types::ContextIdT contextId, const types::Servic
         case types::ContentTypeT::GLOBAL_HEADER:
         {
              types::ServiceIntT shortId =0xffffffff;
-             auto header = xxx;
-             localWrite(contextId,shortId,writer->data(),writer->size(),etas::getk::types::ContentTypeT::GLOBAL_HEADER);
+             std::string header = 'BYD V1.0';
+             const void* header_addr = header.data();
+             auto header_size = header.size();
+             localWrite(contextId,shortId,header_addr,header_size,etas::getk::types::ContentTypeT::GLOBAL_HEADER);
+             responseHandler->requestContentCompleted(contextId);
+             break;
         }
         case types::ContentTypeT::GLOBAL_STATIC_INFO:
         {
-            for(const auto& serviceInfo : this->serviceTopicManager_.getServiceInfoList(stvIntList))
-            {
-                auto schema = xxx;
-                localWrite(contextId,serviceInfo.shortId,schema->data(),schema->size(),etas::getk::types::ContentTypeT::METADATA);
-            }
+            // for(const auto& serviceInfo : this->serviceTopicManager_.getServiceInfoList(stvIntList))
+            // {
+            //     auto schema = xxx;
+            //     localWrite(contextId,serviceInfo.shortId,schema->data(),schema->size(),etas::getk::types::ContentTypeT::METADATA);
+            // }
+            responseHandler->requestContentCompleted(contextId);
+            break;
         }
         case types::ContentTypeT::GLOBAL_DYNAMIC_INFO:
         {
@@ -238,23 +235,23 @@ ErrorCodeT requestContent(const types::ContextIdT contextId, const types::Servic
         }
         case types::ContentTypeT::METADATA:
         {
-            for(const auto& serviceInfo : this->serviceTopicManager_.getServiceInfoList(stvIntList))
-            {
-                auto channel = xxx;
-                localWrite(contextId,serviceInfo.shortId,channel->data(),channel->size(),etas::getk::types::ContentTypeT::METADATA);
-            }
+            // for(const auto& serviceInfo : this->serviceTopicManager_.getServiceInfoList(stvIntList))
+            // {
+            //     auto channel = xxx;
+            //     localWrite(contextId,serviceInfo.shortId,channel->data(),channel->size(),etas::getk::types::ContentTypeT::METADATA);
+            // }
             responseHandler->requestContentCompleted(contextId);
             break;
         }
         case types::ContentTypeT::DATA:
         {
-             for(const auto& serviceInfo : this->serviceTopicManager_.getServiceInfoList(stvIntList))
-            {
-                auto buffer_info = xxx;
-                types::DataInfoT datainfo(type,contextId,shortId,{timestamp_ns},0,0);
-                datainfo.buffers.push_back(buffer_info);
-                data_sender->sendDataBuffer(datainfo);
-            }
+            //  for(const auto& serviceInfo : this->serviceTopicManager_.getServiceInfoList(stvIntList))
+            // {
+            //     auto buffer_info = xxx;
+            //     types::DataInfoT datainfo(type,contextId,shortId,{timestamp_ns},0,0);
+            //     datainfo.buffers.push_back(buffer_info);
+            //     data_sender->sendDataBuffer(datainfo);
+            // }
             responseHandler->requestContentCompleted(contextId);
             break;
         }
