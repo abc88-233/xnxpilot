@@ -27,7 +27,8 @@ namespace api {
 class ISoTpAsyncRequest
 {
 public:
-
+    Poller * poller = Poller::create();
+    std::map<std::string,SubSocket*> registeredSockets;
 
     virtual ~ISoTpAsyncRequest() {}
 
@@ -88,8 +89,7 @@ public:
 class ISoTpAsyncResponse
 {
 public:
-    Poller * poller = Poller::create();
-    std::map<std::string,SubSocket*> registeredSockets;
+
     
     virtual ~ISoTpAsyncResponse() {}
 

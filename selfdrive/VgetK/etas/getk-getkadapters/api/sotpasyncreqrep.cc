@@ -110,6 +110,7 @@ ErrorCodeT subscribe(const types::MappedServiceListT& mpdSrvList) override
     {
             //服务订阅设置回调流程
         IDataSender* data_sender;
+        types::ServiceDescExtListT& srvDescExtList;
         for (auto sock : poller->poll(1000))
         {
             auto msg = sock->receive();
@@ -122,10 +123,14 @@ ErrorCodeT subscribe(const types::MappedServiceListT& mpdSrvList) override
         //    data_info.buffers.push_back(buffer_header);
            data_info.buffers.push_back(buffer_data);
            data_sender->sendDataBuffer(data_info);
+           auto serdes = types::ServiceDescT(serint,server_name);
+           srvDescExt.serviceDesc=serdes;
+           srvDescExt.serviceState=types::ServiceStateT::SUBSCRIBED;
+           srvDescExtList.push_back(srvDescExt);
         }
            //返回给Ralo状态更新信息
         ISoTpAsyncResponse* responseHandler;
-        responseHandler->updateServiceState();
+        responseHandler->updateServiceState(srvDescExtList);
          return EC_OK;
     }    
 
@@ -133,12 +138,18 @@ ErrorCodeT subscribe(const types::MappedServiceListT& mpdSrvList) override
 
 ErrorCodeT unsubscribe(const types::MappedServiceListT& mpdSrvList) override
 {
+     types::ServiceDescExtListT& srvDescExtList;
      for(const auto& mpdSrv:mpdSrvList)
      {
         // 查找服务名称
         ServiceIntT serint = mpdSrv.serviceInt;
         auto server_name = etas_services[int(serint)];
         SubSocket* sock_to_remove = registeredSockets[server_name];
+        types::ServiceDescExtT& srvDescExt
+        auto serdes = types::ServiceDescT(serint,server_name);
+        srvDescExt.serviceDesc=serdes;
+        srvDescExt.serviceState=types::ServiceStateT::UNDEFINED;
+        srvDescExtList.push_back(srvDescExt);
         if (sock_to_remove) {
             poller->unregisterSocket(sock_to_remove);
             // 删除套接字
@@ -146,20 +157,36 @@ ErrorCodeT unsubscribe(const types::MappedServiceListT& mpdSrvList) override
         }
      }
        ISoTpAsyncResponse* responseHandler;
-       responseHandler->updateServiceState();
+       responseHandler->updateServiceState(srvDescExtList);
        return EC_OK;
 }
 
 ErrorCodeT unsubscribeAll() override
 {
+    types::ServiceDescExtListT& srvDescExtList;
+
    for(const auto& Sockets :registeredSockets)
    {
     auto sock = Sockets.second;
     poller->unregisterSocket(sock);
+    types::ServiceDescExtT& srvDescExt
+    auto name = Sockets.first;
+    auto srvint = services[name];
+    auto serdes = types::ServiceDescT(srvint,name);
+    srvDescExt.serviceDesc=serdes;
+    srvDescExt.serviceState=types::ServiceStateT::UNDEFINED;
+    srvDescExtList.push_back(srvDescExt);
     delete sock;
+    
    }
      ISoTpAsyncResponse* responseHandler;
-     responseHandler->updateServiceState();
-      return EC_OK;
-   
+     responseHandler->updateServiceState(srvDescExtList);
+    return EC_OK;
 }
+
+
+ErrorCodeT requestContent(const types::ContextIdT contextId, const types::ServiceIntListT& srvIntList, const types::ContentTypeT type)
+{
+    
+}
+ 
