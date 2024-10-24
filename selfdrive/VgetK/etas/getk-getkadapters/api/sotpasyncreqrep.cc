@@ -187,11 +187,15 @@ ErrorCodeT unsubscribeAll() override
 
 ErrorCodeT requestContent(const types::ContextIdT contextId, const types::ServiceIntListT& srvIntList, const types::ContentTypeT type) override
 {
-    auto localwriter = [this](etas::getk::types::ContextIdT contextid , etas::getk::types::ServiceIntT shortId,const void* const data, uint32_t datasize,etas::getk::types::ContentTypeT type)
+    auto localwriter = [this](etas::getk::types::ContextIdT contextId , etas::getk::types::ServiceIntT shortId,const void* const data, uint32_t datasize,etas::getk::types::ContentTypeT type)
     {
         etas::getk::api::BufferAddressT addr{data,0};
         etas::getk::api::BufferInfoT buffer_info{addr,dataSize, etas::getk::api::SendDataBufferFlags::sync};
-        const auto rx_timestamp std::chrono::duration_cast<std::chrono::nanoseconds>(rx_timestamp.time_since_)
+        const auto rx_timestamp std::chrono::steady_clock::now();
+        uint64_t timestamp_ns = static_cast<std::uint64_t>( std::chrono::duration_cast<std::chrono::nanoseconds>(rx_timestamp.time_since_epoch()).count());
+        etas::getk::types::DataInfoT datainfo(type,contextId,shortId,{timestamp_ns},0,0);
+        datainfo.buffers.push_back(buffer_info);
+        IDataSender->sendDataBuffer(datainfo);
     };
     switch(type)
     {
