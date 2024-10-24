@@ -114,19 +114,25 @@ ErrorCodeT subscribe(const types::MappedServiceListT& mpdSrvList) override
         for (auto sock : poller->poll(1000))
         {
             auto msg = sock->receive();
-           api::DataInfoT data_info();
-           
+            auto msg_data = msg->getData();
+            uint32_t msg_size = msg->getSize();
+// DataInfoT(types::ContentTypeT _type, types::ContextIdT _contextId,types::ServiceIntT _ecuEventId,
+// types::TimestampT _timestamp,DataInfoHandleT _handle, EventPriorityT _priority) 
+            auto time_stamp = std::chrono::steady_clock::now();
+            api::DataInfoT data_info(types::ContentTypeT::DATA，con_id,serint,time_stamp,0，0);
+            void* voidPtr = const_cast<void*>(msg_data);
+            api::BufferAddressT buf_adr(voidPtr, 0);
             //  BufferInfoT(const BufferAddressT &_address, uint32_t _size, SendDataBufferFlags _flags) : flags(_flags), address(_address), size(_size)
-        //    api::BufferInfoT buffer_header(api::SendDataBufferFlags::sync);
-           api::BufferInfoT buffer_data(msg->getData(),msg->getSize(),api::SendDataBufferFlags::none);
+            // api::BufferInfoT buffer_header(api::SendDataBufferFlags::sync);
+            api::BufferInfoT buffer_data(msg->getData(),msg_size,api::SendDataBufferFlags::none);
         //    可以不填充
-        //    data_info.buffers.push_back(buffer_header);
-           data_info.buffers.push_back(buffer_data);
-           data_sender->sendDataBuffer(data_info);
-           auto serdes = types::ServiceDescT(serint,server_name);
-           srvDescExt.serviceDesc=serdes;
-           srvDescExt.serviceState=types::ServiceStateT::SUBSCRIBED;
-           srvDescExtList.push_back(srvDescExt);
+            // data_info.buffers.push_back(buffer_header);
+            data_info.buffers.push_back(buffer_data);
+            data_sender->sendDataBuffer(data_info);
+            auto serdes = types::ServiceDescT(serint,server_name);
+            srvDescExt.serviceDesc=serdes;
+            srvDescExt.serviceState=types::ServiceStateT::SUBSCRIBED;
+            srvDescExtList.push_back(srvDescExt);
         }
            //返回给Ralo状态更新信息
         ISoTpAsyncResponse* responseHandler;
@@ -189,11 +195,20 @@ ErrorCodeT requestContent(const types::ContextIdT contextId, const types::Servic
 {
     ISoTpAsyncResponse* responseHandler;
     IDataSender* data_sender;
+    while(true)
+    {
+       for(auto cur_sock : poller->poll(1000))
+       {
+         auto msg = cur_sock->receive();
+         auto msg_data = msg->getData();
+         auto msg_size = msg->getSize();
+       }
+    }
     auto localwriter = [this](types::ContextIdT contextId , types::ServiceIntT shortId,const void* const data, uint32_t datasize,types::ContentTypeT type)
     {
         api::BufferAddressT addr{data,0};
         api::BufferInfoT buffer_info{addr,dataSize, etas::getk::api::SendDataBufferFlags::sync};
-        const auto rx_timestamp std::chrono::steady_clock::now();
+        const auto rx_timestamp = std::chrono::steady_clock::now();
         uint64_t timestamp_ns = static_cast<std::uint64_t>( std::chrono::duration_cast<std::chrono::nanoseconds>(rx_timestamp.time_since_epoch()).count());
         types::DataInfoT datainfo(type,contextId,shortId,{timestamp_ns},0,0);
         datainfo.buffers.push_back(buffer_info);
