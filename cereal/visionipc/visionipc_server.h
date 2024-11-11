@@ -39,4 +39,5 @@ class VisionIpcServer {
   void create_buffers(VisionStreamType type, size_t num_buffers, bool rgb, size_t width, size_t height);
   void send(VisionBuf * buf, VisionIpcBufExtra * extra, bool sync=true);
   void start_listener();
+  void create_buffers_from_video(VisionStreamType type,size_t num_buffers,cv::VideoCapture& cap)
 };

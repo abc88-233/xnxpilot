@@ -176,7 +176,7 @@ VisionIpcServer::~VisionIpcServer(){
   listener_thread.join();
 
   // VisionBuf cleanup
-  for( auto const& [type, buf] : buffers ) {
+  for(auto const& [type, buf] : buffers ) {
     for (VisionBuf* b : buf){
       if (b->free() != 0) {
         LOGE("Failed to free buffer");
@@ -190,4 +190,30 @@ VisionIpcServer::~VisionIpcServer(){
     delete sock;
   }
   delete msg_ctx;
+}
+
+void VisionIpcServer::create_buffers_from_video(VisionStreamType type,size_t num_buffers,cv::VideoCapture& cap)
+{
+  assert(num_buffers<VISIONIPC_MAX_FDS);
+  size_t rgb_width = static_cast<size_t>(cap.get(cv::CAP_PROP_FRAME_WIDTH));
+  size_t rgb_height = static_cast<size_t>(cap.get(cv::CAP_PROP_FRAME_HEIGHT));
+  int aligned_w = 0,aligned_h=0;
+  size_t size = 0;
+  size_t stride = 0;
+  visionbuf_compute_aligned_width_and_height(rgb_width,rgb_height,&aligned_w,&aligned_h);
+  size = static_cast<size_t>(aligned_w)*static_cast<size_t>(aligned_h)*3;
+  stride = aligned_w*3;
+
+  for(size_t i = 0 ;i<num_buffers;i++)
+  {
+    VisionBuf* buf = new VisionBuf();
+    buf->allocate(size);
+    buf->idx=i;
+    buf->type = type;
+    if(device_id) buf->init_cl(device_id,ctx);
+    buf->init_rgb(rgb_width,rgb_height,stride);
+    buffers[type].push_back(buf);
+  }
+  cur_idx[type] = 0 ;
+  sockets[type]=PubSocket::create(msg_ctx,get_endpoint_name(name,type),false);
 }
