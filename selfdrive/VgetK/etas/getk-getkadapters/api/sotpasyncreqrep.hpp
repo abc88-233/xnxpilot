@@ -16,6 +16,10 @@
 #include "etas/base/err.h"
 #include "cereal/services.h"
 #include"cereal/messaging/messaging.h"
+#include"cereal/etas_services.h"
+#include<iostream>
+#include<chrono>
+#include"etas/getk-getkadapters/api/datasender.hpp"
 namespace etas {
 namespace getk {
 namespace api {
@@ -27,8 +31,6 @@ namespace api {
 class ISoTpAsyncRequest
 {
 public:
-    Poller * poller = Poller::create();
-    std::map<std::string,SubSocket*> registeredSockets;
 
     virtual ~ISoTpAsyncRequest() {}
 

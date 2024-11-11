@@ -10,8 +10,8 @@ class Impl1:public etas::getk::api::ISoTpAsyncRequest{
     ErrorCodeT find(const types::ServiceStrListT& srvStrList) override
     {
         //设置两个ServiceDescListT类型列表，用于向VgetK系统传递活跃与不活跃的通道消息
-        types::ServiceDescListT& offer_list;
-        types::ServiceDescListT& stop_list;
+        types::ServiceDescListT offer_list;
+        types::ServiceDescListT stop_list;
         //遍历需要查找的服务列表
         for(const auto& srvStr: srvStrList){
             //如果列表不在我们的服务中，则说明参数传递有误
@@ -21,19 +21,19 @@ class Impl1:public etas::getk::api::ISoTpAsyncRequest{
             }
             //查找该通道是否活跃
             SubMaster sm({srvStr.c_str()});
-            auto mes = services[ss];
+            auto mes = services[srvStr];
             //活跃则放入offer_list中
             if(sm.allAlive)
             {
-                offer_list.push_back(types::ServiceDescT(mes.port,ss));
+                offer_list.push_back(types::ServiceDescT(mes.port,srvStr));
             }
               //不活跃则放入stop_list中
             else{
-                stop_list.push_back(types::ServiceDescT(mes.port,ss));
+                stop_list.push_back(types::ServiceDescT(mes.port,srvStr));
             }
         }
        //定义ISoTpAsyncResponse类用于发送响应
-        ISoTpAsyncResponse* responseHandler;
+        api::ISoTpAsyncResponse* responseHandler;
          if (!responseHandler) {
             return EC_ERR_INVALID_HANDLE; // 返回错误代码，因为响应处理器未设置
         }
@@ -55,8 +55,8 @@ class Impl1:public etas::getk::api::ISoTpAsyncRequest{
     {
         
         //设置两个ServiceDescListT类型列表，用于向VgetK系统传递活跃与不活跃的通道消息
-        types::ServiceDescListT& offer_list;
-        types::ServiceDescListT& stop_list;
+        types::ServiceDescListT offer_list;
+        types::ServiceDescListT stop_list;
         //遍历所有通道，寻找所有通道的活跃状态
         for (const auto& it : services) {
           SubMaster sm({(it.first).c_str()});
@@ -70,7 +70,7 @@ class Impl1:public etas::getk::api::ISoTpAsyncRequest{
         }
 
         //返回给Ralo状态信息
-        ISoTpAsyncResponse* responseHandler;
+        api::ISoTpAsyncResponse* responseHandler;
          if (!responseHandler) {
             // 返回错误代码，因为响应处理器未设置
             return EC_ERR_INVALID_HANDLE; 
@@ -104,27 +104,30 @@ ErrorCodeT subscribe(const types::MappedServiceListT& mpdSrvList) override
         SubSocket* sock = SubSocket::create(ctx, server_name.c_str());
         poller->registerSocket(sock);
         registeredSockets[server_name]=sock;
+        registered_serint[sock]={serint,con_id};
     }
       // 3.do subscription on the service object and with a callback which eventually call IDataSender->sendDataBuffer
     while(true)
     {
             //服务订阅设置回调流程
-        IDataSender* data_sender;
-        types::ServiceDescExtListT& srvDescExtList;
+        api::IDataSender* data_sender;
+        types::ServiceDescExtListT srvDescExtList;
         for (auto sock : poller->poll(1000))
         {
+            types::ServiceDescExtT srvDescExt;
             auto msg = sock->receive();
-            auto msg_data = msg->getData();
+            api::BufferAddressT msg_data{msg->getData(),0};
             uint32_t msg_size = msg->getSize();
 // DataInfoT(types::ContentTypeT _type, types::ContextIdT _contextId,types::ServiceIntT _ecuEventId,
 // types::TimestampT _timestamp,DataInfoHandleT _handle, EventPriorityT _priority) 
-            auto time_stamp = std::chrono::steady_clock::now();
-            api::DataInfoT data_info(types::ContentTypeT::DATA，con_id,serint,time_stamp,0，0);
-            void* voidPtr = const_cast<void*>(msg_data);
-            api::BufferAddressT buf_adr(voidPtr, 0);
+            auto timestamp = std::chrono::steady_clock::now();
+            uint64_t time_stamp = static_cast<std::uint64_t>( std::chrono::duration_cast<std::chrono::nanoseconds>(timestamp.time_since_epoch()).count());
+            api::DataInfoT data_info(types::ContentTypeT::DATA，con_id,serint,{time_stamp},0，0);
+            auto server_name = etas_services[(int)serint];
+            // api::BufferAddressT buf_adr(voidPtr, 0);
             //  BufferInfoT(const BufferAddressT &_address, uint32_t _size, SendDataBufferFlags _flags) : flags(_flags), address(_address), size(_size)
             // api::BufferInfoT buffer_header(api::SendDataBufferFlags::sync);
-            api::BufferInfoT buffer_data(msg->getData(),msg_size,api::SendDataBufferFlags::none);
+            api::BufferInfoT buffer_data(msg_data,msg_size,api::SendDataBufferFlags::none);
         //    可以不填充
             // data_info.buffers.push_back(buffer_header);
             data_info.buffers.push_back(buffer_data);
@@ -144,14 +147,14 @@ ErrorCodeT subscribe(const types::MappedServiceListT& mpdSrvList) override
 
 ErrorCodeT unsubscribe(const types::MappedServiceListT& mpdSrvList) override
 {
-     types::ServiceDescExtListT& srvDescExtList;
+     types::ServiceDescExtListT srvDescExtList;
      for(const auto& mpdSrv:mpdSrvList)
      {
         // 查找服务名称
         ServiceIntT serint = mpdSrv.serviceInt;
         auto server_name = etas_services[int(serint)];
         SubSocket* sock_to_remove = registeredSockets[server_name];
-        types::ServiceDescExtT& srvDescExt
+        types::ServiceDescExtT srvDescExt
         auto serdes = types::ServiceDescT(serint,server_name);
         srvDescExt.serviceDesc=serdes;
         srvDescExt.serviceState=types::ServiceStateT::UNDEFINED;
@@ -162,14 +165,14 @@ ErrorCodeT unsubscribe(const types::MappedServiceListT& mpdSrvList) override
             delete sock_to_remove;  
         }
      }
-       ISoTpAsyncResponse* responseHandler;
+       api::ISoTpAsyncResponse* responseHandler;
        responseHandler->updateServiceState(srvDescExtList);
        return EC_OK;
 }
 
 ErrorCodeT unsubscribeAll() override
 {
-   types::ServiceDescExtListT& srvDescExtList;
+   types::ServiceDescExtListT srvDescExtList;
 
    for(const auto& Sockets :registeredSockets)
    {
@@ -185,7 +188,7 @@ ErrorCodeT unsubscribeAll() override
     delete sock;
     
    }
-     ISoTpAsyncResponse* responseHandler;
+     api::ISoTpAsyncResponse* responseHandler;
      responseHandler->updateServiceState(srvDescExtList);
     return EC_OK;
 }
@@ -193,9 +196,9 @@ ErrorCodeT unsubscribeAll() override
 
 ErrorCodeT requestContent(const types::ContextIdT contextId, const types::ServiceIntListT& srvIntList, const types::ContentTypeT type) override
 {
-    ISoTpAsyncResponse* responseHandler;
-    IDataSender* data_sender;
-    auto localwriter = [this](types::ContextIdT contextId , types::ServiceIntT shortId,const void* const data, uint32_t datasize,types::ContentTypeT type)
+    api::ISoTpAsyncResponse* responseHandler;
+    api::IDataSender* data_sender;
+    auto localwriter = [this](types::ContextIdT contextId , types::ServiceIntT shortId,const void* const data, uint32_t datasize,types::ContentTypeT type,api::IDataSender* data_sender)
     {
         api::BufferAddressT addr{data,0};
         api::BufferInfoT buffer_info{addr,dataSize, api::SendDataBufferFlags::sync};
@@ -210,10 +213,10 @@ ErrorCodeT requestContent(const types::ContextIdT contextId, const types::Servic
         case types::ContentTypeT::GLOBAL_HEADER:
         {
              types::ServiceIntT shortId =0xffffffff;
-             std::string header = 'BYD V1.0';
+             std::string header = "BYD V1.0";
              const void* header_addr = header.data();
              auto header_size = header.size();
-             localWrite(contextId,shortId,header_addr,header_size,etas::getk::types::ContentTypeT::GLOBAL_HEADER);
+             localwriter(contextId,shortId,header_addr,header_size,etas::getk::types::ContentTypeT::GLOBAL_HEADER,data_sender);
              responseHandler->requestContentCompleted(contextId);
              break;
         }
@@ -262,3 +265,8 @@ ErrorCodeT requestContent(const types::ContextIdT contextId, const types::Servic
     return EC_OK;
 }
  }
+
+
+
+
+
